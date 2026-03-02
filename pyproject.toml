@@ -1,0 +1,91 @@
+[build-system]
+requires = [
+    "hatchling",
+    "hatch-vcs",
+]
+build-backend = "hatchling.build"
+
+# Metadata ====================================================================
+[project]
+name = "diffusion-tomography"
+dynamic = ["version"]
+readme = "README.md"
+requires-python = ">= 3.10, < 3.13"
+license = "MIT"
+authors = [
+    { name = "Youssef Haouchat", email = "youssef.haouchat@epfl.ch" },
+    { name = "Daniele Hamm", email = "daniele.hamm@epfl.ch" },
+]
+classifiers = [
+    "Framework :: Pycsou",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+urls.download = "https://github.com/HaouchatY/diffusion-tomography"
+dependencies = [
+    "numpy >= 1.24, < 2",
+    "pyxu @ git+https://github.com/pyxu-org/pyxu.git@v2.0.2",
+    "pyxu-diffops @ git+https://github.com/dhamm97/pyxu-diffops.git",
+    "scipy >= 1.11, < 2",
+    "matplotlib >= 3.7, < 4",
+    "typing; python_version < '3.11'",
+
+    # torch-related dependencies
+        # torch
+    "torch >= 2.2.0, < 3",
+    "torchvision >= 0.17.1, < 1",
+
+    # Jupyter-related dependencies
+    "notebook >= 6.5, < 7",
+    "jupyterlab >= 4.3, < 5",
+    "ipykernel >= 6.27, < 7",
+    "nbformat >= 5.9, < 6",
+    "nbconvert >= 7.6, < 8",
+
+]
+
+# entry_points; Note the `_` underscore to overload a base Pyxu class.
+#[project.entry-points."pyxu.operator"]
+#MfiDiffusion = "pyxu_diffops.operator:MfiDiffusion"
+#PeronaMalikDiffusion = "pyxu_diffops.operator:PeronaMalikDiffusion"
+#TikhonovDiffusion = "pyxu_diffops.operator:TikhonovDiffusion"
+#TotalVariationDiffusion = "pyxu_diffops.operator:TotalVariationDiffusion"
+#diffusion = "pyxu_diffops.operator.diffusion"
+#CurvaturePreservingDiffusion = "pyxu_diffops:operator:CurvaturePreservingDiffusion"
+#AnisEdgeEnhancingDiffusion = "pyxu_diffops:operator:AnisEdgeEnhancingDiffusion"
+#AnisCoherenceEnhancingDiffusion = "pyxu_diffops:operator:AnisCoherenceEnhancingDiffusion"
+#AnisDiffusion = "pyxu_diffops:operator:AnisDiffusion"
+
+
+
+# Optional dependencies =======================================================
+[project.optional-dependencies]
+dev = [ "pyxu[dev]", ]
+complete-gpu11 = [ "pyxu[complete11]", ]
+complete-gpu12 = [ "pyxu[complete12]", ]
+
+# Get version info from Git ===================================================
+[tool.hatch.version]
+source = "vcs"
+
+## sdist/wheel config ==========================================================
+[tool.hatch.build]
+#exclude = [
+#    "/dev",
+#    "/doc",
+#    "/src/pyxu_diffops_tests",
+#]
+# include = [
+#     "/src",
+# ]
+include = ["**/*"]
+
+# Allow direct references in dependencies =====================================
+[tool.hatch.metadata]
+allow-direct-references = true
