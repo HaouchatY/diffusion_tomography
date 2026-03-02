@@ -1,3 +1,3 @@
 # diffusion_tomography
 
-This is our big beautiful repo!
+This is our repo!
