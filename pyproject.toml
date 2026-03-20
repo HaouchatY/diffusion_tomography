@@ -28,18 +28,21 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 urls.download = "https://github.com/HaouchatY/diffusion-tomography"
-dependencies = [
-    "numpy >= 1.24, < 2",
+dependencies = [ 
+    # "numpy >= 1.24, < 2",
     "pyxu @ git+https://github.com/pyxu-org/pyxu.git@v2.0.2",
     "pyxu-diffops @ git+https://github.com/dhamm97/pyxu-diffops.git",
-    "scipy >= 1.11, < 2",
+    # "scipy >= 1.11, < 2",
     "matplotlib >= 3.7, < 4",
     "typing; python_version < '3.11'",
+    "scikit-image >= 0.22, < 1",
+    "ipywidgets >= 8.1, < 9",
 
     # torch-related dependencies
         # torch
     "torch >= 2.2.0, < 3",
     "torchvision >= 0.17.1, < 1",
+    "tensorboard >= 2.15, < 3",
 
     # Jupyter-related dependencies
     "notebook >= 6.5, < 7",
@@ -47,6 +50,9 @@ dependencies = [
     "ipykernel >= 6.27, < 7",
     "nbformat >= 5.9, < 6",
     "nbconvert >= 7.6, < 8",
+
+    # tqdm
+    "tqdm >= 4.65, < 5",
 
 ]
 
