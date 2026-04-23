@@ -77,12 +77,6 @@ class _PositiveClipToROI(pxa.ProxFunc):
 
 def _DataFidelityFunctional(dim_shape: pxt.NDArrayShape, noisy_tomo_data: pxt.NDArray,
                            sigma_err: pxt.NDArray, grid: str = "coarse", geometry_matrix: pxt.NDArray = None) -> pxt.OpT:
-    if geometry_matrix is None:
-        dir_geom_mats = os.path.join(dirname, 'forward_model/geometry_matrices')
-        if grid == "coarse":
-            geometry_matrix = sp.load_npz(dir_geom_mats+"/sparse_geometry_matrix_sxr.npz")
-        elif grid == "fine":
-            geometry_matrix = sp.load_npz(dir_geom_mats+"/sparse_geometry_matrix_sxr_fine_grid.npz")
     # define explicit LinOp from geometry matrix
     forward_model_linop = _ExplicitLinOpSparseMatrix(dim_shape=dim_shape, mat=geometry_matrix)
     with warnings.catch_warnings():
@@ -111,7 +105,7 @@ def _DataFidelityFunctional(dim_shape: pxt.NDArrayShape, noisy_tomo_data: pxt.ND
     return op
 
 
-def define_loglikelihood_and_logprior(ground_truth, psi,
+def define_loglikelihood_and_logprior(ground_truth, psi, fwd_matrix,
                                       reconstruction_shape=(1, 120, 40),
                                sigma_err=1e-2,
                                reg_fct_type="coherence_enhancing",
@@ -119,13 +113,6 @@ def define_loglikelihood_and_logprior(ground_truth, psi,
                                seed=0, plot=False):
     # Define reconstruction grid finesse (coarse grid)
     dim_shape_coarse = (1, 120, 40)
-    # Load geometry matrix
-    if ground_truth.shape == (120, 40):
-        fwd_matrix = sp.load_npz(os.path.join(dirname, "forward_model/geometry_matrices/sparse_geometry_matrix_sxr.npz"))
-    elif ground_truth.shape == (240, 80):
-        fwd_matrix = sp.load_npz(os.path.join(dirname, "forward_model/geometry_matrices/sparse_geometry_matrix_sxr_fine_grid.npz"))
-    else:
-        raise ValueError("Ground truth shape must be `(120, 40)` or `(240, 80)`")
     # Reshape magnetic equilibrium if necessary
     if psi.shape != reconstruction_shape[1:]:
         psi = skimt.resize(psi, reconstruction_shape[1:], anti_aliasing=False, mode='edge')
@@ -143,7 +130,7 @@ def define_loglikelihood_and_logprior(ground_truth, psi,
         plt_tools.plot_tomo_data(tomo_data, noisy_tomo_data)
 
     # Define data-fidelity term
-    f = _DataFidelityFunctional(dim_shape=reconstruction_shape, noisy_tomo_data=noisy_tomo_data, sigma_err=sigma_err, grid="coarse")
+    f = _DataFidelityFunctional(dim_shape=reconstruction_shape, noisy_tomo_data=noisy_tomo_data, sigma_err=sigma_err, geometry_matrix=fwd_matrix)
     f.tomo_data = tomo_data
 
     # Define regularization functional

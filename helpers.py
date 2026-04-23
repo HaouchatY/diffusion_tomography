@@ -7,6 +7,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 import scipy.sparse as sp
+import pywt
 
 from reaction_diffusion.routines.tomo_fusion.tools import plotting_fcts as tomo_plots
 
@@ -291,6 +292,7 @@ def sample_posterior_diffpir(
     x_init=None,
     clipping_mask=None,
     reaction_diffusion_op=None,
+    lambda_rd = 5,
 ):
     """
     DPS-style posterior sampling with linear observations y = A x + n.
@@ -332,17 +334,15 @@ def sample_posterior_diffpir(
 
         eps_model = model(x, t_batch)
         x0_hat = predict_x0_from_eps(x, eps_model, alpha_bar[t])
-
         Id_matrix = torch.eye(A.shape[1], device=A.device)
         H = A.T @ A + rho_t * Id_matrix
+        if reaction_diffusion_op is not None:
+            H += (lambda_rd*sigma_t_bar) *  grad_op_mat.T @ grad_op_mat
         b = apply_At(A, y) + rho_t * x0_hat.view(x0_hat.size(0), -1)
         x0_guided = torch.linalg.solve(H, b.T).T.view_as(x0_hat)
         
         if clipping_mask is not None: #todo introduce vanishing
             x0_guided = x0_guided * clipping_mask
-
-        if reaction_diffusion_op is not None: #todo introduce vanishing
-            x0_guided = x0_guided - rho_t/L * (grad_op_mat @ x0_guided.view(x0_guided.size(0), -1).T).T.view_as(x0_guided)
 
         x = ddim_update(x0_guided, eps_model, t, t_prev, alpha_bar, eta=zeta)
 
@@ -394,15 +394,48 @@ def show_samples(samples, titles=None, ncols=None, title=None, figsize=None,
     plt.tight_layout()
 
 
-def compute_closest_y(y, y_tomo_train):
-    # Find the closest y_tomo_train to y
-    y_norm = y / torch.norm(y, dim=1, keepdim=True)
-    y_tomo_train_norm = y_tomo_train / torch.norm(y_tomo_train, dim=1, keepdim=True)
-    idx = torch.argmin(torch.cdist(y_norm, y_tomo_train_norm))
+def compute_closest_y(y, y_tomo_train, normalization_for_comparison="norm"):
+    if isinstance(y, torch.Tensor):
+        # Find the closest y_tomo_train to y
+        if normalization_for_comparison == "norm":
+            y_norm = y / torch.norm(y, dim=1, keepdim=True)
+            y_tomo_train_norm = y_tomo_train / torch.norm(y_tomo_train, dim=1, keepdim=True)
+        elif normalization_for_comparison == "max":
+            y_norm = y / torch.max(torch.abs(y), dim=1, keepdim=True).values
+            y_tomo_train_norm = y_tomo_train / torch.max(torch.abs(y_tomo_train), dim=1, keepdim=True).values
+        else:
+            raise ValueError(f"Unknown normalization_for_comparison: {normalization_for_comparison}")
+        idx = torch.argmin(torch.cdist(y_norm, y_tomo_train_norm))
+    elif isinstance(y, np.ndarray):
+        if normalization_for_comparison == "norm":
+            y_norm = y / np.linalg.norm(y, axis=1, keepdims=True)
+            y_tomo_train_norm = y_tomo_train / np.linalg.norm(y_tomo_train, axis=1, keepdims=True)
+        elif normalization_for_comparison == "max":
+            y_norm = y / np.max(np.abs(y), axis=1, keepdims=True)
+            y_tomo_train_norm = y_tomo_train / np.max(np.abs(y_tomo_train), axis=1, keepdims=True)
+        else:
+            raise ValueError(f"Unknown normalization_for_comparison: {normalization_for_comparison}")
+        idx = np.argmin(np.linalg.norm(y_norm - y_tomo_train_norm, axis=1))
     y_closest = y_tomo_train[idx]
     return y_closest
 
-def compute_normalization_coefficient(y, y_tomo_train):
-    y_closest = compute_closest_y(y, y_tomo_train).squeeze()
-    coeff = torch.dot(y.squeeze(), y_closest) / torch.dot(y_closest, y_closest)
-    return coeff.item(), y_closest
+def compute_normalization_coefficient(y, y_tomo_train, normalization_for_comparison="norm"):
+    y_closest = compute_closest_y(y, y_tomo_train, normalization_for_comparison).squeeze()
+    if isinstance(y, torch.Tensor):
+        coeff = torch.dot(y.squeeze(), y_closest) / torch.dot(y_closest, y_closest)
+        coeff = coeff.item()
+    elif isinstance(y, np.ndarray):
+        coeff = np.dot(y.squeeze(), y_closest) / np.dot(y_closest, y_closest)
+    return coeff, y_closest
+
+
+def estimate_noise_std(y):
+    # Detail coefficients at finest scale
+    d = pywt.wavedec(y, 'db4', level=2, mode='periodization')
+    d= d[-1]
+    # keep only smallest xx% (tune this)
+    thresh = np.percentile(np.abs(d), 80)
+    d = d[np.abs(d) <= thresh]
+    # MAD estimator (robust to signal content)
+    sigma = np.median(np.abs(d)) / 0.6745
+    return sigma
