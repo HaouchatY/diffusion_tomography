@@ -105,6 +105,46 @@ def _DataFidelityFunctional(dim_shape: pxt.NDArrayShape, noisy_tomo_data: pxt.ND
     return op
 
 
+def define_loglikelihoodfromdata_and_logprior(noisy_tomo_data, psi, fwd_matrix,
+                                      reconstruction_shape=(1, 120, 40),
+                               sigma_err=1e-2,
+                               reg_fct_type="coherence_enhancing",
+                               alpha=1e-2, sampling=0.0125,
+                               seed=0):
+    # Define reconstruction grid finesse (coarse grid)
+    dim_shape_coarse = (1, 120, 40)
+    # Reshape magnetic equilibrium if necessary
+    if psi.shape != reconstruction_shape[1:]:
+        psi = skimt.resize(psi, reconstruction_shape[1:], anti_aliasing=False, mode='edge')
+
+    # Define data-fidelity term
+    f = _DataFidelityFunctional(dim_shape=reconstruction_shape, noisy_tomo_data=noisy_tomo_data, sigma_err=sigma_err, geometry_matrix=fwd_matrix)
+
+    # Define regularization functional
+    if reg_fct_type == "coherence_enhancing":
+        g = px_diffops.AnisCoherenceEnhancingDiffusionOp(dim_shape=reconstruction_shape,
+                                                        alpha=alpha,
+                                                        m=1,
+                                                        sigma_gd_st=1*sampling,
+                                                        smooth_sigma_st=2*sampling,
+                                                        freezing_arr=psi,
+                                                        sampling=sampling,
+                                                        matrix_based_impl=True)
+    elif reg_fct_type == "anisotropic":
+        g = px_diffops.AnisDiffusionOp(dim_shape=reconstruction_shape,
+                                       alpha=alpha,
+                                       diff_method_struct_tens="fd",
+                                       freezing_arr=psi,
+                                       sampling=sampling,
+                                       matrix_based_impl=True)
+    elif reg_fct_type == "MFI":
+        raise ValueError("reg_fct_type `MFI` not available yet")
+    elif reg_fct_type == "anisMFI":
+        raise ValueError("reg_fct_type `AnisMFI` not available yet")
+
+    return f, g
+
+
 def define_loglikelihood_and_logprior(ground_truth, psi, fwd_matrix,
                                       reconstruction_shape=(1, 120, 40),
                                sigma_err=1e-2,

@@ -29,8 +29,8 @@ def plot_profile(image,
         h = Lz / image.shape[0]
         zs = np.linspace(0, Lz, round(Lz / h), endpoint=False) + 0.5 * h
         rs = np.linspace(0, Lr, round(Lr / h), endpoint=False) + 0.5 * h
-        tcv_shape_coords[:, 0] = tcv_shape_coords[:, 0] * rs.size - 0.5 * h
-        tcv_shape_coords[:, 1] = tcv_shape_coords[:, 1] * zs.size - 0.5 * h
+        tcv_shape_coords[:, 0] = tcv_shape_coords[:, 0] * (rs.size-1) - 0.5 * h
+        tcv_shape_coords[:, 1] = tcv_shape_coords[:, 1] * (zs.size-1) - 0.5 * h
         path = Path(tcv_shape_coords.tolist())
         patch = PathPatch(path, facecolor='none')
 

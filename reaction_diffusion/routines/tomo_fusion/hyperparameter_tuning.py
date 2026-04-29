@@ -19,7 +19,7 @@ dirname = os.path.dirname(__file__)
 
 def _compute_tomo_data_mse(f, im_MAP, indices=None):
     if indices is None:
-        indices = np.arange(0, 100)
+        indices = np.arange(0, f.noisy_tomo_data.size)
     if isinstance(f.sigma_err, float) or (isinstance(f.sigma_err, np.ndarray) and f.sigma_err.size == 1):
         # scalar sigma, compute mse
         return np.mean((f.forward_model_linop(im_MAP)[indices]-f.noisy_tomo_data[indices])**2)
