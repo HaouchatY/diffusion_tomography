@@ -13,7 +13,7 @@ import reaction_diffusion.routines.tomo_fusion.hyperparameter_tuning as hyper_tu
 import reaction_diffusion.routines.tomo_fusion.bayesian_computations as bcomp
 
 
-def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
+def reg_param_tuning_train_phantoms(sigma_err, saving_dir, diagnostic="sxr"):
     # phantom indices to tune regularization parameter 
     indices = np.arange(0, 100)
     samples_dir = Path(f'/home/fusiontomo/Repos/diffusion_tomography/test_set_sxr_samples')
@@ -29,14 +29,23 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
     tcv_mask[tcv_mask>0]=1
 
     # load forward model
-    fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
+    if diagnostic == "sxr":
+        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
+        reg_params_tuning = np.logspace(-3, 1, 13)
+    elif diagnostic == "dmpx":
+        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/dmpx_geometry_matrix.npy")
+        reg_params_tuning = np.logspace(-3, 1, 13)
+    elif diagnostic == "pilatus":
+        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/pilatus_geometry_matrix.npy")
+        reg_params_tuning = np.logspace(-3, 1, 13)
     max_fwd_model = np.max(fwd_model)
     fwd_model = sp.csr_matrix(fwd_model)
     normalized_fwd_model = fwd_model / max_fwd_model
     reconstruction_shape = (120,40)
 
     # error level on data, computed as 0.05 times the average of the tomographic measurements on 1000 training phantoms
-    sigma_err_noise = (3.5e-11 / max_fwd_model)
+    #sigma_err_noise = (3.5e-11 / max_fwd_model)
+    sigma_err_noise = 0.25
     # sigma_err_recon = 0.02 # sigma in reconstruction ("normalized" value)
     normalization_to_one_factor = 1 # no normalization
 
@@ -65,7 +74,7 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
         reg_param_data_idx = hyper_tune.reg_param_tuning(f, g, tuning_techniques=["GT"], ground_truth=ground_truth,
                                                          with_pos_constraint=True, clipping_mask=mask_core,
                                                          cv_strategy="random", map_scaling_factor=normalization_to_one_factor,
-                                                         reg_params=np.logspace(-3, 1, 13), plot=False)
+                                                         reg_params=reg_params_tuning, plot=False)
 
         reg_param_tuning_data.append(reg_param_data_idx)
 
@@ -100,6 +109,8 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
     factors_average_wrt_best = np.zeros(indices.size)
     # ratio of MSE with median regularization parameter vs best MSE
     factors_median_wrt_best = np.zeros(indices.size)
+    # ratio of MSE with regularization parameter fixed to 1e-1 vs best MSE
+    factors_001_wrt_best = np.zeros(indices.size)
 
     # compute MSE for average value of regularization parameter
     for i, idx in enumerate(indices):
@@ -107,6 +118,7 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
         psi = psis[idx, :, :]
         alpha = alphas[idx]
         trim_val_ = trim_val[idx, :]
+        mask_core = tomo_helps.define_core_mask(psi=psi, dim_shape=reconstruction_shape, trim_values_x=trim_val_)
 
         # anisotropic regularization functional
         reg_fct_type = "anisotropic"
@@ -127,10 +139,15 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
         map = bcomp.compute_MAP(f, g, reg_param_median, with_pos_constraint=True, clipping_mask=mask_core)
         map *= normalization_to_one_factor
         mse_median_reg_param = np.mean((map-skimt.resize(ground_truth, f.dim_shape[1:], anti_aliasing=False, mode='edge'))**2)
+        # compute MSE with reg_param fixed to 1e-1
+        map = bcomp.compute_MAP(f, g, 1e-1, with_pos_constraint=True, clipping_mask=mask_core)
+        map *= normalization_to_one_factor
+        mse_001_reg_param = np.mean((map-skimt.resize(ground_truth, f.dim_shape[1:], anti_aliasing=False, mode='edge'))**2)
 
         # compute factors
         factors_average_wrt_best[i] = mse_avg_reg_param / reg_param_tuning_data[i]['GT'][2, np.argmin(reg_param_tuning_data[i]['GT'][2, :])]
         factors_median_wrt_best[i] = mse_median_reg_param / reg_param_tuning_data[i]['GT'][2, np.argmin(reg_param_tuning_data[i]['GT'][2, :])]
+        factors_001_wrt_best[i] = mse_001_reg_param / reg_param_tuning_data[i]['GT'][2, np.argmin(reg_param_tuning_data[i]['GT'][2, :])]
 
     # save all results
     np.save(saving_dir+'tuning_data.npy', np.array(reg_param_tuning_data))
@@ -138,6 +155,7 @@ def reg_param_tuning_train_phantoms(sigma_err, saving_dir):
     np.save(saving_dir+'nb_occurrences.npy', nb_occurrences)
     np.save(saving_dir+'factors_avg_wrt_best.npy', factors_average_wrt_best)
     np.save(saving_dir + 'factors_median_wrt_best.npy', factors_median_wrt_best)
+    np.save(saving_dir+'factors_001_wrt_best.npy', factors_001_wrt_best)
     np.save(saving_dir+'reg_param_mean.npy', reg_param_mean)
     np.save(saving_dir + 'reg_param_median.npy', reg_param_median)
     np.save(saving_dir + 'sigma_level.npy', sigma_level)
@@ -150,8 +168,23 @@ if __name__ == '__main__':
     # Noise model N1, noise level 5%
     sigma_level = 0.02
     script_dir = Path(__file__).resolve().parent
-    saving_dir = os.path.join(script_dir, 'tuning_data/reg_param_tuning_sigma002/')
+
+    # sxr
+    saving_dir = os.path.join(script_dir, 'tuning_data/reg_param_tuning_sxr/')
     if not os.path.isdir(saving_dir):
         os.mkdir(saving_dir)
     # analyze training phantoms
-    reg_param_tuning_train_phantoms(sigma_level, saving_dir)
+    reg_param_tuning_train_phantoms(sigma_level, saving_dir, diagnostic="sxr")
+
+    # dmpx
+    saving_dir = os.path.join(script_dir, 'tuning_data/reg_param_tuning_dmpx/')
+    if not os.path.isdir(saving_dir):
+        os.mkdir(saving_dir)
+    # analyze training phantoms
+    reg_param_tuning_train_phantoms(sigma_level, saving_dir, diagnostic="dmpx")
+
+    # pilatus
+    saving_dir = os.path.join(script_dir, 'tuning_data/reg_param_tuning_pilatus/')
+    if not os.path.isdir(saving_dir):
+        os.mkdir(saving_dir)
+    reg_param_tuning_train_phantoms(sigma_level, saving_dir, diagnostic="pilatus")
