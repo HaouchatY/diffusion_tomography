@@ -78,7 +78,7 @@ y_tomo_train = train_samples_normalization.reshape(-1, H * W) @ A_tomo.T
 # Load pre-computed noise realisations and scaling params
 # noise_realizations: shape (1000, 100) — row i is the noise vector for phantom i
 # scaling_params:     shape (1000,)     — entry i is the scaling factor for phantom i
-noise_realizations = torch.from_numpy(np.load("noise_realizations.npy")).to(device).to(torch.float32)   # (1000, 100)
+noise_realizations = torch.from_numpy(np.load("noise_realizations_sxr.npy")).to(device).to(torch.float32)   # (1000, 100)
 scaling_params     = torch.from_numpy(np.load("scaling_params.npy")).to(device).to(torch.float32)        # (1000,)
 
 # Clean synthetic measurements
