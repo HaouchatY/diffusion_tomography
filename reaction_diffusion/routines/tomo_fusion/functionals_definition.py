@@ -199,6 +199,70 @@ def define_loglikelihood_and_logprior(ground_truth, psi, fwd_matrix,
 
 
 def define_loglikelihood_cv(f, cv_type="CV_single", cv_strategy="random", seed=0):
+    n_total = f.forward_model_linop.codim_size
+    n_folds = 5
+    fold_size = n_total // n_folds          # floor division — fine if not perfectly divisible
+    train_size = n_total - fold_size        # ~80% used for training in CV_single
+
+    if cv_type == "CV_single":
+        np.random.seed(seed)
+        if cv_strategy == "random":
+            cv_idx = np.sort(
+                np.random.choice(np.arange(n_total), train_size, replace=False)
+            )
+        elif cv_strategy == "by_camera":
+            # Pick one fold block at random and hold it out
+            fold_start = fold_size * np.random.randint(0, n_folds)
+            held_out = np.arange(fold_start, fold_start + fold_size)
+            cv_idx = np.delete(np.arange(n_total), held_out)
+        else:
+            raise ValueError("cv_strategy {} not available".format(cv_strategy))
+
+        f_cv = _DataFidelityFunctional(
+            dim_shape=f.forward_model_linop.dim_shape,
+            noisy_tomo_data=f.noisy_tomo_data[cv_idx],
+            sigma_err=f.sigma_err,
+            geometry_matrix=f.forward_model_linop.mat[cv_idx, :],
+        )
+        f_cv.cv_idx      = cv_idx
+        f_cv.cv_test_idx = np.delete(np.arange(n_total), cv_idx)
+
+    elif cv_type == "CV_full":
+        f_cv = []
+        idxs = np.arange(n_total)
+        np.random.seed(seed)
+
+        if cv_strategy == "random":
+            np.random.shuffle(idxs)
+        elif cv_strategy != "by_camera":
+            raise ValueError("cv_strategy {} not available".format(cv_strategy))
+
+        for i in range(n_folds):
+            # Slice out the i-th fold; uneven remainder goes into the last fold
+            if i < n_folds - 1:
+                test_positions = idxs[i * fold_size : (i + 1) * fold_size]
+            else:
+                test_positions = idxs[i * fold_size :]   # last fold absorbs remainder
+
+            cv_idx = np.setdiff1d(idxs, test_positions)
+
+            f_cv_ = _DataFidelityFunctional(
+                dim_shape=f.forward_model_linop.dim_shape,
+                noisy_tomo_data=f.noisy_tomo_data[cv_idx],
+                sigma_err=f.sigma_err,
+                geometry_matrix=f.forward_model_linop.mat[cv_idx, :],
+            )
+            f_cv_.cv_idx      = cv_idx
+            f_cv_.cv_test_idx = test_positions
+            f_cv.append(f_cv_)
+
+    else:
+        raise ValueError("cv_type must be `CV_single` or `CV_full`")
+
+    return f_cv
+
+
+def define_loglikelihood_cv_old(f, cv_type="CV_single", cv_strategy="random", seed=0):
     if cv_type == "CV_single":
         # select randomly 80 LoS. Remaining 20 will be used for tuning
         np.random.seed(seed)
