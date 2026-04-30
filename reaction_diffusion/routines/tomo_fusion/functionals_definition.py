@@ -216,7 +216,7 @@ def define_loglikelihood_cv(f, cv_type="CV_single", cv_strategy="random", seed=0
                                               noisy_tomo_data=f.noisy_tomo_data[cv_idx],
                                               sigma_err=f.sigma_err,
                                               geometry_matrix=f.forward_model_linop.mat[cv_idx, :])
-        f_cv.tomo_data = f.tomo_data[cv_idx]
+        #f_cv.tomo_data = f.tomo_data[cv_idx]
         f_cv.cv_idx = cv_idx
         f_cv.cv_test_idx = np.delete(np.arange(0, 100), cv_idx)
 
@@ -235,7 +235,7 @@ def define_loglikelihood_cv(f, cv_type="CV_single", cv_strategy="random", seed=0
                                                   noisy_tomo_data=f.noisy_tomo_data[cv_idx],
                                                   sigma_err=f.sigma_err,
                                                   geometry_matrix=f.forward_model_linop.mat[cv_idx, :])
-            f_cv_.tomo_data = f.tomo_data[cv_idx]
+            #f_cv_.tomo_data = f.tomo_data[cv_idx]
             f_cv_.cv_idx = cv_idx
             f_cv_.cv_test_idx = idxs[idxs[i * 20: (i + 1) * 20]]
             # append i-th functional to the list

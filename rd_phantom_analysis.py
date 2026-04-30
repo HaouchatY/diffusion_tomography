@@ -101,6 +101,7 @@ def run_study(diag, phantom_indices):
             rows = []
 
             for i in range(num_eval_samples):
+                print(f"  Processing sample {phantom_indices[i]} (index {i} in chunk), sigma={sigma_y_tomo}, procedure={procedure}...")
                 np.random.seed(phantom_indices[i])
 
                 # ------------------------------------------------------------------
@@ -189,6 +190,8 @@ def run_study(diag, phantom_indices):
                     clip_iterations="core",
                     compute_stats_wrt_MAP=True,
                     estimate_quantiles=False,
+                    estimate_tomo_data_stats=False,
+                    estimate_peak_location=False,
                     samples=ula_samples,
                 )
                 uq_data["time"] = time.time() - start_time

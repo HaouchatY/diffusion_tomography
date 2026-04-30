@@ -54,6 +54,8 @@ def run_ula(f, g, reg_param,
             with_pos_constraint=False,
             clip_iterations=None, clipping_mask=None,
             estimate_quantiles=False, quantile_marks=[0.005, 0.025, 0.05, 0.16, 0.25, 0.5, 0.75, 0.84, 0.95, 0.975, 0.995],
+            estimate_tomo_data_stats=False,
+            estimate_peak_location=False,
             compute_stats_wrt_MAP=False,
             samples=int(1e5), burn_in=int(1e3), thinning_factor=1,
             seed=0, show_progress=False):
@@ -86,12 +88,14 @@ def run_ula(f, g, reg_param,
     var_prad_ula_core = OnlineVariance()
     mean_prad_ula_tcv = OnlineMoment(order=1)
     var_prad_ula_tcv = OnlineVariance()
-    # tomographic data
-    mean_tomo_ula = OnlineMoment(order=1)
-    var_tomo_ula = OnlineVariance()
-    # peak position
-    mean_peak_loc_ula = OnlineMoment(order=1)
-    var_peak_loc_ula = OnlineVariance()
+    if estimate_tomo_data_stats:
+        # tomographic data
+        mean_tomo_ula = OnlineMoment(order=1)
+        var_tomo_ula = OnlineVariance()
+    if estimate_peak_location:
+        # peak position
+        mean_peak_loc_ula = OnlineMoment(order=1)
+        var_peak_loc_ula = OnlineVariance()
     if compute_stats_wrt_MAP:
         # moments wrt MAP
         var_ula_wrtMAP = OnlineMoment(order=2)
@@ -99,8 +103,8 @@ def run_ula(f, g, reg_param,
         var_prad_ula_wrtMAP_core = OnlineMoment(order=2)
         # compute MAP and radiated power
         im_MAP = compute_MAP(f, g, reg_param, with_pos_constraint=with_pos_constraint, clipping_mask=clipping_mask, show_progress=show_progress)
-        prad_MAP_tcv = tomo_helps.compute_radiated_power(im_MAP, mask_tcv, g.sampling)
-        prad_MAP_core = tomo_helps.compute_radiated_power(im_MAP, mask_core, g.sampling)
+        prad_MAP_tcv = tomo_helps.compute_radiated_power(im_MAP, mask_tcv, g.sampling, R_lfs=1.1376)
+        prad_MAP_core = tomo_helps.compute_radiated_power(im_MAP, mask_core, g.sampling, R_lfs=1.1376)
 
     # Run ULA
     print("Running {} ULA iterations".format(samples))
@@ -109,7 +113,8 @@ def run_ula(f, g, reg_param,
 
     # initialize data
     data = {}
-    data["tomo_data"], data["noisy_tomo_data"], data["sigma_err"] = f.tomo_data, f.noisy_tomo_data, f.sigma_err
+    #data["tomo_data"], data["noisy_tomo_data"], data["sigma_err"] = f.tomo_data, f.noisy_tomo_data, f.sigma_err
+    data["noisy_tomo_data"], data["sigma_err"] = f.noisy_tomo_data, f.sigma_err
     data["reg_param"], data["sampling"] = reg_param, g.sampling
     if 'Anis' in g._name:
         data["alpha"] = g.diffusion_coefficient.alpha
@@ -145,21 +150,22 @@ def run_ula(f, g, reg_param,
         if i % thinning_factor == 0:
             # update central moments
             mean, var = mean_ula.update(sample), var_ula.update(sample)
-            prad_tcv = tomo_helps.compute_radiated_power(sample, mask_tcv, g.sampling)
-            prad_core = tomo_helps.compute_radiated_power(sample, mask_core, g.sampling)
+            prad_tcv = tomo_helps.compute_radiated_power(sample, mask_tcv, g.sampling, R_lfs=1.1376)
+            prad_core = tomo_helps.compute_radiated_power(sample, mask_core, g.sampling, R_lfs=1.1376)
             prads_tcv[int(i / thinning_factor)] = prad_tcv
             prads_core[int(i / thinning_factor)] = prad_core
             prad_tcv = np.array([prad_tcv])
             prad_core = np.array([prad_core])
             mean_prad_tcv, var_prad_tcv = mean_prad_ula_tcv.update(prad_tcv), var_prad_ula_tcv.update(prad_tcv)
             mean_prad_core, var_prad_core = mean_prad_ula_core.update(prad_core), var_prad_ula_core.update(prad_core)
-            # tomographic data
-            mean_tomo = mean_tomo_ula.update(f.forward_model_linop(sample))
-            var_tomo = var_tomo_ula.update(f.forward_model_linop(sample))
-            # estimate position of peak emissivity
-            peak_loc = np.array(np.where(sample == np.max(sample)), dtype=np.float64).flatten()
-            mean_peak_loc, var_peak_loc = mean_peak_loc_ula.update(peak_loc), var_peak_loc_ula.update(peak_loc)
-
+            if estimate_tomo_data_stats:
+                # tomographic data
+                mean_tomo = mean_tomo_ula.update(f.forward_model_linop(sample))
+                var_tomo = var_tomo_ula.update(f.forward_model_linop(sample))
+            if estimate_peak_location:
+                # estimate position of peak emissivity
+                peak_loc = np.array(np.where(sample == np.max(sample)), dtype=np.float64).flatten()
+                mean_peak_loc, var_peak_loc = mean_peak_loc_ula.update(peak_loc), var_peak_loc_ula.update(peak_loc)
             if compute_stats_wrt_MAP:
                 # update moments computed wrt MAP
                 sample_wrtMAP = sample - im_MAP
@@ -174,8 +180,10 @@ def run_ula(f, g, reg_param,
     data["mean_prad_tcv"], data["var_prad_tcv"] = mean_prad_tcv, var_prad_tcv
     data["mean_prad_core"], data["var_prad_core"] = mean_prad_core, var_prad_core
     data["prads_tcv"], data["prads_core"] = prads_tcv, prads_core
-    data["mean_tomo_data"], data["var_tomo_data"] = mean_tomo, var_tomo
-    data["mean_peak_loc"], data["var_peak_loc"] = mean_peak_loc, var_peak_loc
+    if estimate_tomo_data_stats:
+        data["mean_tomo_data"], data["var_tomo_data"] = mean_tomo, var_tomo
+    if estimate_peak_location:
+        data["mean_peak_loc"], data["var_peak_loc"] = mean_peak_loc, var_peak_loc
     if compute_stats_wrt_MAP:
         data["im_MAP"] = im_MAP
         data["prad_map_tcv"], data["prad_map_core"] = prad_MAP_tcv, prad_MAP_core
