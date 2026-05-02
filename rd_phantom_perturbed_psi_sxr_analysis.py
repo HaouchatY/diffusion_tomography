@@ -13,6 +13,7 @@ import reaction_diffusion.routines.tomo_fusion.tools.helpers as tomo_helps
 import reaction_diffusion.routines.tomo_fusion.functionals_definition as fct_def
 import reaction_diffusion.routines.tomo_fusion.hyperparameter_tuning as hyper_tune
 import reaction_diffusion.routines.tomo_fusion.bayesian_computations as bcomp
+import skimage.transform as skimt  
 
 from helpers import *
 
@@ -25,12 +26,7 @@ def run_study(diag, phantom_indices):
     # Load SXR forward model operator
     # --------------------------------------------------------------------------
     # load forward model
-    if diag == "sxr":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
-    elif diag == "dmpx":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/dmpx_geometry_matrix.npy")
-    elif diag == "pilatus":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/pilatus_geometry_matrix.npy")
+    fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
     fwd_model /= fwd_model.max()
     A_tomo     = fwd_model
     A_tomo_csr = sp.csr_matrix(A_tomo)
@@ -48,21 +44,9 @@ def run_study(diag, phantom_indices):
     trim_vals    = np.load(samples_dir / "trimming_values.npy")[phantom_indices]
 
     # --------------------------------------------------------------------------
-    # Load training samples for alpha normalization
-    # --------------------------------------------------------------------------
-    train_samples_idxs = np.arange(0, 10000)
-    train_samples_path = Path("../../data/sxr_data/sxr_profiles_coarse")
-    train_samples_normalization = []
-    for sample_id_ in train_samples_idxs:
-        path = os.path.join(train_samples_path, f"sxr_sample_{sample_id_}.npy")
-        train_samples_normalization.append(np.load(path))
-    train_samples_normalization = np.array(train_samples_normalization, dtype=np.float32)  # (10000, H, W)
-    y_tomo_train = train_samples_normalization.reshape(-1, H * W) @ A_tomo.T               # (10000, n_channels)
-
-    # --------------------------------------------------------------------------
     # Load noise realisations and scaling params
     # --------------------------------------------------------------------------
-    noise_realizations = np.load(f"noise_realizations_{diag}.npy")[phantom_indices]  # (1000, n_channels)
+    noise_realizations = np.load(f"noise_realizations_sxr.npy")[phantom_indices]  # (1000, n_channels)
     scaling_params     = np.load("scaling_params.npy")[phantom_indices]        # (1000,)
 
     # Clean synthetic measurements
@@ -78,15 +62,10 @@ def run_study(diag, phantom_indices):
     anis_params_grid = np.logspace(-4, 0, 13)
     ula_samples      = int(1e5)
 
-    if diag == "sxr":
-        noise_levels = [0.05, 0.25, 0.5]
-    elif diag == "dmpx":
-        noise_levels = [0.1, 0.5, 1.0]
-    elif diag == "pilatus":
-        noise_levels = [0.07, 0.35, 0.7]
-    procedures   = [False, True]
+    noise_levels = [0.25]
+    procedures   = [False]
 
-    csv_dir = Path(f"metrics_csv_phantom_analysis_{diag}_rd")
+    csv_dir = Path(f"metrics_csv_phantom_analysis_perturbed_psi_sxr_rd")
     csv_dir.mkdir(exist_ok=True)
 
     # --------------------------------------------------------------------------
@@ -97,11 +76,11 @@ def run_study(diag, phantom_indices):
             proc_str = "true" if procedure else "false"
             print(f"\n=== sigma={sigma_y_tomo}, procedure={procedure} ===")
 
-            csv_name = f"metrics_rd_{diag}_chunk{chunk_idx}_{sigma_y_tomo}_{proc_str}.csv"
+            csv_name = f"metrics_rd_perturbed_psi_sxr_chunk{chunk_idx}_{sigma_y_tomo}_{proc_str}.csv"
             csv_path = csv_dir / csv_name
-            if csv_path.exists():
-                print(f"Already exists {csv_path}, skipping...")
-                continue
+            # if csv_path.exists():
+            #     print(f"Already exists {csv_path}, skipping...")
+            #     continue
 
             rows = []
 
@@ -120,39 +99,34 @@ def run_study(diag, phantom_indices):
                 # ------------------------------------------------------------------
                 # Procedure: scaling + alpha normalization
                 # ------------------------------------------------------------------
-                if procedure:
-                    scale = float(scaling_params[i])
-                    y_used = y_used * scale
-                    x_gt_i = x_gt_i * scale
-                    sigma_est = estimate_noise_std(y_used.reshape(1, -1))
-                    sigma_est = float(sigma_est) if not hasattr(sigma_est, "item") else sigma_est.item()
-                    alpha_norm, _ = compute_normalization_coefficient(
-                        y_used.reshape(1, -1), y_tomo_train, normalization_for_comparison="norm"
-                    )
-                    y_used     = y_used / alpha_norm
-                    sigma_used = sigma_est / alpha_norm
-                    print(f"  i={i}, scaling={scale:.4f}, alpha_norm={alpha_norm:.4f}, "
-                        f"sigma_true={sigma_y_tomo:.4f}, sigma_used={sigma_used:.4f}")
-                else:
-                    scale      = 1.0
-                    alpha_norm = 1.0
-                    sigma_used = sigma_y_tomo
-
+                scale      = 1.0
+                alpha_norm = 1.0
+                sigma_used = sigma_y_tomo
+  
                 # ------------------------------------------------------------------
-                # Sample-specific geometry
+                # Perturb the magnetic equilibrium
                 # ------------------------------------------------------------------
                 psi       = psis[i]
                 trim_val_ = trim_vals[i]
-                mask_core = tomo_helps.define_core_mask(
-                    psi=psi, dim_shape=reconstruction_shape, trim_values_x=trim_val_
-                )
+                upper_trim_bound, lower_trim_bound, hfs_trim_bound, lfs_trim_bound = 6, 5, 3, 2
+                np.random.seed(phantom_indices[i]) # for reproducibility of perturbations across runs
+                upper_trim = int(upper_trim_bound * np.random.rand())
+                lower_trim = int(H - lower_trim_bound * np.random.rand())
+                hfs_trim = int(hfs_trim_bound * np.random.rand())
+                lfs_trim = int(W - lfs_trim_bound * np.random.rand())
+                trimming_vals_perturb = np.array([upper_trim, lower_trim, hfs_trim, lfs_trim])
+                psi_perturb = skimt.resize(psi[upper_trim:lower_trim, hfs_trim:lfs_trim], (H,W), anti_aliasing=True,mode='edge')
+                # define core for perturbed psi
+                xpoint_loc = int(H * (90 - trim_val_[0]) / (trim_val_[1] - trim_val_[0]) )
+                mask_core_perturb = tomo_helps.define_core_mask(
+                                    psi=psi_perturb, dim_shape=(H, W), xpoint_idx_base_psi=xpoint_loc, trim_values_x=trimming_vals_perturb)
 
                 # ------------------------------------------------------------------
                 # Define functionals with noisy tomo data
                 # ------------------------------------------------------------------
                 f, g = fct_def.define_loglikelihoodfromdata_and_logprior(
                     y_used,
-                    psi,
+                    psi_perturb,
                     fwd_matrix=A_tomo_csr,
                     reconstruction_shape=(1, H, W),
                     sigma_err=sigma_used,
@@ -170,7 +144,7 @@ def run_study(diag, phantom_indices):
                     reg_param=reg_param,
                     tuning_techniques=["CV_full"],
                     with_pos_constraint=True,
-                    clipping_mask=mask_core,
+                    clipping_mask=mask_core_perturb,
                     cv_strategy=["random"],
                     anis_params=anis_params_grid,
                     plot=False,
@@ -190,9 +164,10 @@ def run_study(diag, phantom_indices):
                 # ------------------------------------------------------------------
                 start_time = time.time()
                 uq_data = bcomp.run_ula(
-                    f, g, reg_param, psi, trim_val_,
+                    f, g, reg_param, psi_perturb, trim_val_,
                     with_pos_constraint=True,
                     clip_iterations="core",
+                    clipping_mask=mask_core_perturb,
                     compute_stats_wrt_MAP=True,
                     estimate_quantiles=False,
                     estimate_tomo_data_stats=False,
@@ -257,6 +232,7 @@ def run_study(diag, phantom_indices):
                     "im_MAP": im_map,   # (H, W) MAP estimate
                     "mean":   im_mean,  # (H, W) posterior mean
                     "std":    im_std,   # (H, W) posterior std
+                    "trimming_vals_perturb": trimming_vals_perturb,  # (4,) values of the random trimming applied to the psi for perturbation
                 }
                 np.save(
                     csv_dir / f"results_{diag}_{sigma_y_tomo}_{proc_str}_{phantom_indices[i]}.npy",
@@ -286,9 +262,6 @@ if __name__ == '__main__':
         phantom_indices = np.arange(int(argv[1]), int(argv[2]))
         diag = "sxr"
         print("Running pipeline on phantoms {}-{}".format(int(argv[1]), int(argv[2])))
-    elif len(argv) == 4:
-        phantom_indices = np.arange(int(argv[1]), int(argv[2]))
-        diag = str(argv[3])
     else:
         raise ValueError("Number of passed arguments must be either 1 or 3")
     
