@@ -86,7 +86,7 @@ scaling_params     = torch.from_numpy(np.load("scaling_params.npy")).to(device).
 y_tomo_clean = test_samples.reshape(-1, H * W) @ A_tomo.T  # (1000, n_channels)
 
 # Fixed hyperparameters
-noise_levels  = [0.05, 0.25, 0.5]
+noise_levels  = [0.1, 1.0] #0.5 already available from previous run #[0.05, 0.25, 0.5] #[0.1, 0.5, 1.0]
 lambda_       = 300 #200 change hyperparams for better performance
 zeta          = 0.8 #1.0 change hyperparams for better performance
 procedures    = [False, True]

@@ -78,19 +78,22 @@ print(f"A shape {tuple(A_tomo.shape)}")
 y_tomo_clean = test_samples.reshape(-1, H * W) @ A_tomo.T
 
 # Configuration grid
-noise_levels = [0.05, 0.25, 0.5]
+#noise_levels = [0.1, 0.5, 1.0] #[0.05, 0.25, 0.5]
 if diagnostic=="sxr":
     lambda_values = [100, 200, 300, 400, 500]
     zeta_values = [0.2, 0.4, 0.6, 0.8, 1.0]
     clip_values = [False]
+    noise_levels = [0.05, 0.25, 0.5]
 elif diagnostic=="dmpx":
     lambda_values = [50, 100, 200, 300, 400, 500]
     zeta_values = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4]
     clip_values = [False]
+    noise_levels = [0.1, 0.5, 1.0]
 elif diagnostic=="pilatus":
-    lambda_values = [25, 50, 100, 200, 300]
-    zeta_values = [0.4]#[0.6, 0.8, 1.0, 1.2, 1.4]
+    lambda_values = [50, 100, 200, 300, 400, 500]
+    zeta_values = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4]
     clip_values = [False, True]
+    noise_levels = [0.07, 0.35, 0.7]
 
 num_eval_samples      = 10
 num_posterior_samples = 100

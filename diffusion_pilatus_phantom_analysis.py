@@ -91,12 +91,12 @@ y_tomo_clean = test_samples.reshape(-1, H * W) @ A_tomo.T  # (1000, n_channels)
 # clip=True:  lambda_=25,  zeta=0.8
 # clip=False: lambda_=200, zeta=0.8
 HPARAMS = {
-    True:  {"lambda_": 50,  "zeta": 0.8},
+    True:  {"lambda_": 100,  "zeta": 0.8}, # previous values -> {"lambda_": 50,  "zeta": 0.8},
     False: {"lambda_": 200, "zeta": 0.8},
 }
 
-noise_levels = [0.05, 0.25, 0.5]
-clip_values  = [False, True] 
+noise_levels = [0.07, 0.35, 0.7] # [0.05, 0.25, 0.5]
+clip_values  = [True] #[False, True] 
 procedures   = [False, True]
 
 num_posterior_samples = 100
