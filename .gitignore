@@ -1,2 +1,5 @@
 fusion_epochs/*
 !fusion_epochs/fusion_epoch_2193.pth
+metrics_csv_phantom_analysis/post*
+**/__pycache__/
+*.pyc
