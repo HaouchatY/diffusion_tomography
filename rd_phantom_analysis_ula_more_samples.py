@@ -100,21 +100,22 @@ def run_study(diag, phantom_indices):
     # --------------------------------------------------------------------------
     for sigma_y_tomo in noise_levels:
 
-        if sigma_y_tomo == 0.07 and diag == "pilatus":
-            csv_anis_params = f"metrics_csv_phantom_analysis_rd/metrics_rd_pilatus_rd_alpha_by_camera_{sigma_y_tomo}_false.csv"
-        else:
-            csv_anis_params = f"metrics_csv_phantom_analysis_rd/metrics_rd_pilatus_{sigma_y_tomo}_false.csv"
-        if os.path.exists(csv_anis_params):
-            df = pd.read_csv(csv_anis_params)
-            df["noise"] = sigma_y_tomo
-            anis_params = df['best_anis_param'][phantom_indices] 
-            print(anis_params.shape)
-        else:
-            print(f"File {csv_anis_params} not found.")
-
         for procedure in procedures:
             proc_str = "true" if procedure else "false"
             print(f"\n=== sigma={sigma_y_tomo}, procedure={procedure} ===")
+
+            # load tuned anisotropic parameters
+            if sigma_y_tomo == 0.07 and diag == "pilatus":
+                csv_anis_params = f"metrics_csv_phantom_analysis_rd/metrics_rd_pilatus_rd_alpha_by_camera_{sigma_y_tomo}_{proc_str}.csv"
+            else:
+                csv_anis_params = f"metrics_csv_phantom_analysis_rd/metrics_rd_pilatus_{sigma_y_tomo}_{proc_str}.csv"
+            if os.path.exists(csv_anis_params):
+                df = pd.read_csv(csv_anis_params)
+                df["noise"] = sigma_y_tomo
+                anis_params = df['best_anis_param'][phantom_indices] 
+                print(anis_params.shape)
+            else:
+                print(f"File {csv_anis_params} not found.")
 
             csv_name = f"metrics_rd_{diag}_chunk{chunk_idx}_{sigma_y_tomo}_{proc_str}.csv"
             csv_path = csv_dir / csv_name
