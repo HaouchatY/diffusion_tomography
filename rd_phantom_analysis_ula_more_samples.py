@@ -26,13 +26,13 @@ def run_study(diag, phantom_indices):
     # --------------------------------------------------------------------------
     # load forward model
     if diag == "sxr":
-        fwd_model = np.load("forward_model_sxr_full_geometry.npy")
+        fwd_model = np.load("forward_model/forward_modelforward_model_sxr_full_geometry.npy")
         #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
     elif diag == "dmpx":
-        fwd_model = np.load("dmpx_geometry_matrix.npy")
+        fwd_model = np.load("forward_model/dmpx_geometry_matrix.npy")
         #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/dmpx_geometry_matrix.npy")
     elif diag == "pilatus":
-        fwd_model = np.load("pilatus_geometry_matrix.npy")
+        fwd_model = np.load("forward_model/pilatus_geometry_matrix.npy")
         #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/pilatus_geometry_matrix.npy")
     fwd_model /= fwd_model.max()
     A_tomo     = fwd_model
