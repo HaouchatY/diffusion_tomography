@@ -112,7 +112,7 @@ def run_study(diag, phantom_indices):
             if os.path.exists(csv_anis_params):
                 df = pd.read_csv(csv_anis_params)
                 df["noise"] = sigma_y_tomo
-                anis_params = df['best_anis_param'][phantom_indices] 
+                anis_params = df['best_anis_param'][phantom_indices].values
                 print(anis_params.shape)
             else:
                 print(f"File {csv_anis_params} not found.")
