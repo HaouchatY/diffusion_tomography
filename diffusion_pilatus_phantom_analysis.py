@@ -96,7 +96,7 @@ HPARAMS = {
 }
 
 noise_levels = [0.07, 0.35, 0.7] # [0.05, 0.25, 0.5]
-clip_values  = [True] #[False, True] 
+clip_values  = [False] #[False, True] 
 procedures   = [False, True]
 
 num_posterior_samples = 100

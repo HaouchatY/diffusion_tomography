@@ -191,6 +191,7 @@ def sample_prior(
 ):
     model.eval()
     x = torch.randn(num_samples, *image_shape, device=device)
+    diffusion_process = []  # to store intermediate samples for visualization
 
     timesteps = make_timesteps(schedule["num_train_steps"], num_inference_steps)
     alpha_bar = schedule["alpha_bar"]
@@ -206,8 +207,9 @@ def sample_prior(
             x0_hat = x0_hat.clamp(*clip_range)
 
         x = ddim_update(x0_hat, eps_t, t, t_prev, alpha_bar, eta=eta)
+        diffusion_process.append(x[0].detach().cpu())
 
-    return x
+    return x, diffusion_process
 
 
 @torch.no_grad()
@@ -301,6 +303,7 @@ def sample_posterior_diffpir(
         x0 <- x0 - step_t * grad_x0 ||A x0 - y||^2
     then the diffusion transition uses guided x0.
     """
+    #seed 
     zeta = torch.tensor(zeta, device=device)
     model.eval()
     alpha_bar = schedule["alpha_bar"]
@@ -373,7 +376,7 @@ def show_samples_(samples, title, ncols=4, vmin=None, vmax=None, figsize=(3,3)):
     plt.show()
 
 def show_samples(samples, titles=None, ncols=None, title=None, figsize=None,
-                 contour_images=None, colorbar=False, vmax=None, vmin=None):
+                 contour_images=None, colorbar=False, vmax=None, vmin=None, cmap="viridis"):
     n = len(titles) if titles is not None else min(10, samples.shape[0])
     if ncols is None:
         ncols = n
@@ -385,12 +388,13 @@ def show_samples(samples, titles=None, ncols=None, title=None, figsize=None,
     for i in range(min(n, ncols)):
         contour_image = contour_images[i] if contour_images is not None else None
         tomo_plots.plot_profile(np.array(samples[i].squeeze().detach().cpu()), tcv_plot_clip=True,
-                                contour_image=contour_image, cmap="viridis", ax=ax[i],
+                                contour_image=contour_image, cmap=cmap, ax=ax[i],
                                 colorbar=colorbar, contour_color="w", vmin=vmin, vmax=vmax,
                                 aspect=None, lcfs_width=1, lwidth=0.2)
         ax[i].set_title(titles[i] if titles is not None else "Sample {}".format(i))
     if title is not None:
         fig.suptitle(title)
+
     plt.tight_layout()
 
 

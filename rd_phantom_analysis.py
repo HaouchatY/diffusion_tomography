@@ -26,11 +26,14 @@ def run_study(diag, phantom_indices):
     # --------------------------------------------------------------------------
     # load forward model
     if diag == "sxr":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
+        fwd_model = np.load("forward_model_sxr_full_geometry.npy")
+        #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/forward_model_sxr_full_geometry.npy")
     elif diag == "dmpx":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/dmpx_geometry_matrix.npy")
+        fwd_model = np.load("dmpx_geometry_matrix.npy")
+        #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/dmpx_geometry_matrix.npy")
     elif diag == "pilatus":
-        fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/pilatus_geometry_matrix.npy")
+        fwd_model = np.load("pilatus_geometry_matrix.npy")
+        #fwd_model = np.load("/home/fusiontomo/Repos/diffusion_tomography/forward_model/pilatus_geometry_matrix.npy")
     fwd_model /= fwd_model.max()
     A_tomo     = fwd_model
     A_tomo_csr = sp.csr_matrix(A_tomo)
@@ -42,7 +45,8 @@ def run_study(diag, phantom_indices):
     chunk_idx = phantom_indices[0] // num_eval_samples
     print(f"Running on chunk {chunk_idx} with phantom indices {phantom_indices}")
 
-    samples_dir  = Path("/home/fusiontomo/Repos/diffusion_tomography/test_set_sxr_samples")
+    samples_dir  = Path("test_set_sxr_samples")
+    #samples_dir  = Path("/home/fusiontomo/Repos/diffusion_tomography/test_set_sxr_samples")
     test_samples = np.load(samples_dir / "sxr_samples_with_background_coarse.npy")[phantom_indices]  # (1000, H, W)
     psis         = np.load(samples_dir / "psis_coarse.npy")[phantom_indices]
     trim_vals    = np.load(samples_dir / "trimming_values.npy")[phantom_indices]
@@ -51,7 +55,8 @@ def run_study(diag, phantom_indices):
     # Load training samples for alpha normalization
     # --------------------------------------------------------------------------
     train_samples_idxs = np.arange(0, 10000)
-    train_samples_path = Path("../../data/sxr_data/sxr_profiles_coarse")
+    #train_samples_path = Path("../../data/sxr_data/sxr_profiles_coarse")
+    train_samples_path = Path("data/train_data")
     train_samples_normalization = []
     for sample_id_ in train_samples_idxs:
         path = os.path.join(train_samples_path, f"sxr_sample_{sample_id_}.npy")

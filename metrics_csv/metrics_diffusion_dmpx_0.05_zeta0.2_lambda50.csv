@@ -1,0 +1,11 @@
+sample_idx,psnr,ssim,mse,post_std_mean,sigma_used,zeta,lambda_
+0,-inf,,inf,inf,0.05,0.2,50
+1,-inf,,inf,inf,0.05,0.2,50
+2,-inf,,inf,inf,0.05,0.2,50
+3,-inf,,inf,inf,0.05,0.2,50
+4,-inf,,inf,inf,0.05,0.2,50
+5,-inf,,inf,inf,0.05,0.2,50
+6,-inf,,inf,inf,0.05,0.2,50
+7,-inf,,inf,inf,0.05,0.2,50
+8,-inf,,inf,inf,0.05,0.2,50
+9,-inf,,inf,inf,0.05,0.2,50

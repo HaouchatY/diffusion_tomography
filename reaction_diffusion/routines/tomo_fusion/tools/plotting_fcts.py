@@ -17,7 +17,8 @@ def plot_profile(image,
                  ax=None, colorbar=False,
                  interpolation=None, vmin=None, vmax=None, cmap="viridis", contour_color="w", aspect=None,
                  peak_stats=None,
-                 pad_cbar=0, cbar_tick_params=None, cbar_label=None):
+                 pad_cbar=0, cbar_tick_params=None, cbar_label=None, 
+                 alpha_imshow=1.0):
     if tcv_plot_clip:
         # define TCV patch for plotting
         tcv_shape_coords = np.load(dirname + "/../tcv_shape_coords.npy")
@@ -69,7 +70,7 @@ def plot_profile(image,
             
             #c.collections[lcms_level].set_linewidth(0.75)
             c.set_linewidth(linewidths)
-        p = plt.imshow(np.flip(image, 0), interpolation=interpolation, vmin=vmin, vmax=vmax, cmap=cmap, aspect=aspect)
+        p = plt.imshow(np.flip(image, 0), interpolation=interpolation, vmin=vmin, vmax=vmax, cmap=cmap, aspect=aspect, alpha=alpha_imshow)
         plt.xlim([-0.75, int(image.shape[1])+0.75])
         plt.ylim([-0.75, int(image.shape[0])+0.75])
         # if tcv_plot_clip:
@@ -98,7 +99,7 @@ def plot_profile(image,
 
             #c.collections[lcms_level].set_linewidth(0.75)
             c.set_linewidth(linewidths)
-        p = ax.imshow(np.flip(image,0), interpolation=interpolation, vmin=vmin, vmax=vmax, cmap=cmap, aspect=aspect)
+        p = ax.imshow(np.flip(image,0), interpolation=interpolation, vmin=vmin, vmax=vmax, cmap=cmap, aspect=aspect, alpha=alpha_imshow)
         ax.set_xlim([-0.75, int(image.shape[1])+0.75])
         ax.set_ylim([-0.75, int(image.shape[0])+0.75])
         # if tcv_plot_clip:
@@ -132,7 +133,7 @@ def plot_profile(image,
             cbar.ax.set_yticklabels(cbar_tick_params["yticklabels"])
             cbar.set_label(label=cbar_label, fontsize=cbar_tick_params["label_labelsize"], labelpad=cbar_tick_params["label_labelsize_pad"])
 
-    return
+    return patch if tcv_plot_clip else None
 
 
 def plot_ptheta_LoS_tcv(params, markersize=5):

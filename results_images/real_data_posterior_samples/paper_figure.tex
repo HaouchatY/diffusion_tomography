@@ -1,0 +1,37 @@
+% ============================================================
+% Figure: diffPIR posterior samples for TCV shot 85270 at
+% t = 0.66 s (samples 2-8 of the 11 shown in
+% experimental_data_analysis.ipynb).
+% Assumes the eps files are copied to Figures/real_data_posterior_samples/
+% ============================================================
+\begin{figure}[t]
+\centering
+\newcommand{\panelW}{0.125\textwidth}
+\newcommand{\panelSep}{0.04cm}
+\begin{tikzpicture}[
+  panel/.style={anchor=south west, inner sep=0pt, outer sep=0pt},
+]
+  \def\D{Figures/real_data_posterior_samples}
+  % ---------- Single row: posterior samples ----------
+  \node[panel] (smpA) at (0,0)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample2.eps}};
+  \node[panel] (smpB) at ($(smpA.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample3.eps}};
+  \node[panel] (smpC) at ($(smpB.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample4.eps}};
+  \node[panel] (smpD) at ($(smpC.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample5.eps}};
+  \node[panel] (smpE) at ($(smpD.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample6.eps}};
+  \node[panel] (smpF) at ($(smpE.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample7.eps}};
+  \node[panel] (smpG) at ($(smpF.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir_sample8.eps}};
+
+  % ---------- Row label on the left ----------
+  \node[anchor=east, font=\small] at ($(smpA.west)+(-0.15,0)$)
+    {$\vx^{(i)}_{_\text{DiffPIR}}$};
+\end{tikzpicture}
+\caption{DiffPIR posterior samples for TCV shot 85270 at $t=0.66\,$s.}
+\label{fig:real_data_posterior_samples}
+\end{figure}

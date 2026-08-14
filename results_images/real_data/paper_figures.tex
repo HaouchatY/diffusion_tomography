@@ -1,0 +1,126 @@
+% ============================================================
+% Figure 1: shot 85270 - RD MAP (row 1) vs DiffPIR posterior
+% mean (row 2) at 7 time slices.
+% Assumes the eps files are copied to Figures/real_data/
+% ============================================================
+\begin{figure}[t]
+\centering
+\newcommand{\panelW}{0.125\textwidth}
+\newcommand{\panelSep}{0.04cm}
+\newcommand{\rowSep}{0.5cm}
+\begin{tikzpicture}[
+  panel/.style={anchor=south west, inner sep=0pt, outer sep=0pt},
+]
+  \def\D{Figures/real_data}
+  % ---------- ROW 1: RD MAP reconstructions ----------
+  \node[panel] (rdA) at (0,0)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t240ms_rd.eps}};
+  \node[panel] (rdB) at ($(rdA.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t420ms_rd.eps}};
+  \node[panel] (rdC) at ($(rdB.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_rd.eps}};
+  \node[panel] (rdD) at ($(rdC.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t720ms_rd.eps}};
+  \node[panel] (rdE) at ($(rdD.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t780ms_rd.eps}};
+  \node[panel] (rdF) at ($(rdE.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t900ms_rd.eps}};
+  \node[panel] (rdG) at ($(rdF.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t1020ms_rd.eps}};
+
+  % ---------- ROW 2: DiffPIR posterior means ----------
+  \node[panel, anchor=north west] (dpA) at ($(rdA.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t240ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpB) at ($(rdB.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t420ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpC) at ($(rdC.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t660ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpD) at ($(rdD.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t720ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpE) at ($(rdE.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t780ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpF) at ($(rdF.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t900ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpG) at ($(rdG.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot85270_core_mask_t1020ms_diffpir.eps}};
+
+  % ---------- Time labels above row-1 panels ----------
+  \node[anchor=south, font=\small] at ($(rdA.north)+(0,-0.3)$) {$t=0.24\,$s};
+  \node[anchor=south, font=\small] at ($(rdB.north)+(0,-0.3)$) {$t=0.42\,$s};
+  \node[anchor=south, font=\small] at ($(rdC.north)+(0,-0.3)$) {$t=0.66\,$s};
+  \node[anchor=south, font=\small] at ($(rdD.north)+(0,-0.3)$) {$t=0.72\,$s};
+  \node[anchor=south, font=\small] at ($(rdE.north)+(0,-0.3)$) {$t=0.78\,$s};
+  \node[anchor=south, font=\small] at ($(rdF.north)+(0,-0.3)$) {$t=0.90\,$s};
+  \node[anchor=south, font=\small] at ($(rdG.north)+(0,-0.3)$) {$t=1.02\,$s};
+
+  % ---------- Row labels on the left ----------
+  \node[anchor=east, font=\small] at ($(rdA.west)+(-0.15,0)$) {$\vx_{_\text{RD(MAP)}}$};
+  \node[anchor=east, font=\small] at ($(dpA.west)+(-0.15,0)$) {$\vmu_{_\text{DiffPIR}}$};
+\end{tikzpicture}
+\caption{Reconstructions of TCV shot 85270 at different times. Top row: RD MAP
+estimates; bottom row: DiffPIR posterior means.}
+\label{fig:real_data_85270}
+\end{figure}
+
+% ============================================================
+% Figure 2: shot 88767 (fine time grid) - background (baseline)
+% profile in the first column, then 5 fluctuation slices.
+% Row 1: RD MAP, row 2: DiffPIR posterior mean.
+% ============================================================
+\begin{figure}[t]
+\centering
+\newcommand{\panelW}{0.14\textwidth}
+\newcommand{\panelSep}{0.04cm}
+\newcommand{\groupSep}{0.35cm}  % extra gap between background and fluctuations
+\newcommand{\rowSep}{0.5cm}
+\begin{tikzpicture}[
+  panel/.style={anchor=south west, inner sep=0pt, outer sep=0pt},
+]
+  \def\D{Figures/real_data}
+  % ---------- ROW 1: RD MAP (background + fluctuations) ----------
+  \node[panel] (rdBg) at (0,0)
+    {\includegraphics[width=\panelW]{\D/shot88767_baseline_t1000ms_rd.eps}};
+  \node[panel] (rdA) at ($(rdBg.south east)+(\groupSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1037ms_rd.eps}};
+  \node[panel] (rdB) at ($(rdA.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1038ms_rd.eps}};
+  \node[panel] (rdC) at ($(rdB.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1039ms_rd.eps}};
+  \node[panel] (rdD) at ($(rdC.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1040ms_rd.eps}};
+  \node[panel] (rdE) at ($(rdD.south east)+(\panelSep,0)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1041ms_rd.eps}};
+
+  % ---------- ROW 2: DiffPIR posterior means ----------
+  \node[panel, anchor=north west] (dpBg) at ($(rdBg.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_baseline_t1000ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpA) at ($(rdA.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1037ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpB) at ($(rdB.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1038ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpC) at ($(rdC.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1039ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpD) at ($(rdD.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1040ms_diffpir.eps}};
+  \node[panel, anchor=north west] (dpE) at ($(rdE.south west)+(0,-\rowSep)$)
+    {\includegraphics[width=\panelW]{\D/shot88767_fluct_t1041ms_diffpir.eps}};
+
+  % ---------- Labels above row-1 panels ----------
+  \node[anchor=south, font=\small, align=center] at ($(rdBg.north)+(0,-0.3)$)
+    {background\\$t=1.000\,$s};
+  \node[anchor=south, font=\small] at ($(rdA.north)+(0,-0.3)$) {$t=1.037\,$s};
+  \node[anchor=south, font=\small] at ($(rdB.north)+(0,-0.3)$) {$t=1.038\,$s};
+  \node[anchor=south, font=\small] at ($(rdC.north)+(0,-0.3)$) {$t=1.039\,$s};
+  \node[anchor=south, font=\small] at ($(rdD.north)+(0,-0.3)$) {$t=1.040\,$s};
+  \node[anchor=south, font=\small] at ($(rdE.north)+(0,-0.3)$) {$t=1.041\,$s};
+
+  % ---------- Row labels on the left ----------
+  \node[anchor=east, font=\small] at ($(rdBg.west)+(-0.15,0)$) {$\vx_{_\text{RD(MAP)}}$};
+  \node[anchor=east, font=\small] at ($(dpBg.west)+(-0.15,0)$) {$\vmu_{_\text{DiffPIR}}$};
+\end{tikzpicture}
+\caption{Fluctuation analysis of TCV shot 88767 on the fine time grid. First
+column: background (baseline) profile at $t=1.000\,$s; remaining columns:
+background-subtracted fluctuation reconstructions at consecutive $0.1\,$ms
+frames. Top row: RD MAP estimates; bottom row: DiffPIR posterior means.}
+\label{fig:real_data_88767_fluct}
+\end{figure}

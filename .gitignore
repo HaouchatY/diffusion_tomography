@@ -3,3 +3,16 @@ fusion_epochs/*
 metrics_csv_phantom_analysis/post*
 **/__pycache__/
 *.pyc
+
+# installers / IDE / logs
+miniconda.sh
+.vscode/
+runs/
+
+# fine-grid test-set arrays (>100 MB, coarse versions are tracked)
+test_set_sxr_samples/sxr_samples.npy
+test_set_sxr_samples/sxr_samples_with_background.npy
+test_set_sxr_samples/psis.npy
+
+# heavy per-sample outputs of the phantom studies (summary CSVs are kept)
+metrics_csv_phantom_analysis*/*.npy
